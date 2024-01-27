@@ -18,7 +18,7 @@ namespace MarketingMailer.Services
             foreach (var user in emailModel.UserList)
             {
                 string subject = emailModel.Subject;
-                string body = ReplacePlaceholders(emailModel.Email, user.FirstName, user.LastName);
+                string body = ReplacePlaceholders(emailModel.Email, emailModel.Placeholders, user.PlaceholdersValues);
 
                 await SendEmail(user.Email, subject, body, emailModel.AttachmentList);
             }
@@ -63,10 +63,19 @@ namespace MarketingMailer.Services
             }
 
         }
-        private string ReplacePlaceholders(string emailBody, string firstName, string lastName)
+        private string ReplacePlaceholders(string emailBody, List<Placeholder> placeholders, List<string> placeholdersValues)
         {
-            emailBody = emailBody.Replace("[firstname]", firstName);
-            emailBody = emailBody.Replace("[lastname]", lastName);
+            for(int i = 0; i < placeholders.Count; i++)
+            {
+                if (placeholdersValues.Count > i)
+                {
+                    emailBody = emailBody.Replace("["+$"{placeholders[i].Label}"+ "]", placeholdersValues[i]);
+                }
+                else
+                {
+                    emailBody = emailBody.Replace("[" + $"{placeholders[i].Label}" + "]", "");
+                }
+            }
             return emailBody;
         }
 

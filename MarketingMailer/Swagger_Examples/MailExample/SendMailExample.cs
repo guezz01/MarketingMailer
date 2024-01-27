@@ -15,12 +15,11 @@ namespace MarketingMailer.Swagger_Examples.MailExample
             {
                 new UserModel
                 {
-                    Email = "testofguezz@gmail.com",
-                    FirstName = "Ahmed",
-                    LastName = "Fathi"
+                    Email = "testofguezz@gmail.com"
                 }
             },
-                AttachmentList = []
+                AttachmentList = [],
+                Placeholders = [],
             };
         }
     }

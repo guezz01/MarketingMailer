@@ -10,5 +10,6 @@ namespace MarketingMailer.Models
         public string Email { get; set; }
         public List<UserModel> UserList { get; set; }
         public List<AttachmentModel> AttachmentList { get; set; }
+        public List<Placeholder> Placeholders { get; set; }
     }
 }
