@@ -1,6 +1,6 @@
 @MarketingMailer_HostAddress = http://localhost:5293
 
-GET {{MarketingMailer_HostAddress}}/weatherforecast/
+GET {{MarketingMailer_HostAddress}}/swagger/index.html
 Accept: application/json
 
 ###

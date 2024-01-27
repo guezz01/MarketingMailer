@@ -1,6 +1,8 @@
 ﻿using MarketingMailer.Models;
 using MarketingMailer.Services;
+using MarketingMailer.Swagger_Examples.MailExample;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace MarketingMailer.Controllers
 {
@@ -8,28 +10,24 @@ namespace MarketingMailer.Controllers
     [Route("[controller]")]
     public class MailController : ControllerBase
     {
-        IMailService _mailService;
+        private readonly IMailService _mailService;
+        private readonly IConfiguration _configuration;
         public MailController(IMailService mailService) { 
             _mailService = mailService;
         }
-
+        [SwaggerRequestExample(typeof(EmailModel), typeof(SendMailExample))]
         [HttpPost("send-emails")]
-        public async Task<IActionResult> SendEmails()
+        //[SwaggerRequestExample(typeof(EmailModel), typeof(SendMailExample))]
+        public async Task<IActionResult> SendEmails(EmailModel emailModel)
         {
-            var userData = new List<UserData>
-        {
-            new UserData { Email = "ferieltirari@gmail.com", FirstName = "Feriel", LastName = "Tirari" },
-            new UserData { Email = "testofguezz@gmail.com", FirstName = "Ahmed", LastName = "Test" }
-            // Add more user data as needed
-        };
 
             try
             {
                 // Use await to ensure that the CSV is read before sending emails
                 //await ReadCSV(userData);
-                await _mailService.SendEmails(userData);
+                var response = await _mailService.SendEmails(emailModel);
 
-                return Ok("Emails sent. Check error_log.txt for failed emails.");
+                return Ok(response);
             }
             catch (Exception ex)
             {

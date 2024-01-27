@@ -4,7 +4,7 @@ namespace MarketingMailer.Services
 {
     public interface IMailService
     {
-        Task SendEmails(EmailModel emailModel);
-        Task SendEmail(string to, string subject, string body, string attachmentPath);
+        Task<string> SendEmails(EmailModel emailModel);
+        Task SendEmail(string to, string subject, string body, List<AttachmentModel> attachmentList);
     }
 }

@@ -1,65 +1,73 @@
 ﻿using MarketingMailer.Models;
-using System.Net.Mail;
-using System.Net;
+using Microsoft.AspNetCore.Mvc;
+using MimeKit;
 
 namespace MarketingMailer.Services
 {
     public class MailService : IMailService
     {
-        public MailService()
+
+        private readonly IConfiguration _configuration;
+        public MailService(IConfiguration configuration)
         {
-            
+            _configuration = configuration;
         }
 
-        public async Task SendEmails(EmailModel emailModel)
+        public async Task <string> SendEmails(EmailModel emailModel)
         {
             foreach (var user in emailModel.UserList)
             {
+                string subject = emailModel.Subject;
+                string body = ReplacePlaceholders(emailModel.Email, user.FirstName, user.LastName);
 
-                // Send email for each user without attachment (you can add attachment logic if needed)
-                await SendEmail(user.Email, emailModel.Subject, emailModel.Email, "");
-
-                // Sleep for 10 seconds
-                await Task.Delay(10000);
+                await SendEmail(user.Email, subject, body, emailModel.AttachmentList);
             }
+
+            return "Emails sent successfully.";
         }
 
-        public async Task SendEmail(string to, string subject, string body, string attachmentPath)
+        public async Task SendEmail(string to, string subject, string body, List<AttachmentModel> attachmentList)
         {
-            using (var client = new SmtpClient("smtp.gmail.com"))
+            var smtpServer = _configuration["EmailSettings:SmtpServer"];
+            var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"]);
+            var smtpUsername = _configuration["EmailSettings:Username"];
+            var smtpPassword = _configuration["EmailSettings:Password"];
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(_configuration["EmailSettings:displayName"], smtpUsername));
+            message.To.Add(new MailboxAddress("", to));
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder();
+            bodyBuilder.HtmlBody = body;
+
+            foreach (var attachment in attachmentList)
             {
-                client.Port = 587;
-                client.EnableSsl = true;
-                client.UseDefaultCredentials = false;
-                client.Credentials = new NetworkCredential("aymenguezz@gmail.com", "lkywgeyfvvarwcjq");
-
-                var mailMessage = new MailMessage
+                if (!string.IsNullOrEmpty(attachment.FileName) && !string.IsNullOrEmpty(attachment.Path))
                 {
-                    From = new MailAddress("testofguezz@gmail.com"),
-                    Subject = subject,
-                    Body = body,
-                    IsBodyHtml = true,
-                    To = { to }
-                };
-
-                // Attachments logic
-                if (!string.IsNullOrEmpty(attachmentPath))
-                {
-                    mailMessage.Attachments.Add(new Attachment(attachmentPath));
-                }
-
-                try
-                {
-                    await client.SendMailAsync(mailMessage);
-                    Console.WriteLine($"Email sent to: {to}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error sending email to {to}: {ex.Message}");
-                    // Log the error to the error_log.txt file
-                    await File.AppendAllTextAsync("error_log.txt", $"{DateTime.Now} - {to}: {ex.Message}\n");
+                    using (var stream = new MemoryStream(File.ReadAllBytes(attachment.Path + attachment.FileName)))
+                    {
+                        bodyBuilder.Attachments.Add(attachment.Path + attachment.FileName, stream);
+                    }
                 }
             }
+
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using (var client = new MailKit.Net.Smtp.SmtpClient())
+            {
+                await client.ConnectAsync(smtpServer, smtpPort, true);
+                await client.AuthenticateAsync(smtpUsername, smtpPassword);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+            }
+
+        }
+        private string ReplacePlaceholders(string emailBody, string firstName, string lastName)
+        {
+            emailBody = emailBody.Replace("[firstname]", firstName);
+            emailBody = emailBody.Replace("[lastname]", lastName);
+            return emailBody;
         }
 
     }
